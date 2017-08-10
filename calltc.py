@@ -108,9 +108,10 @@ if 1:
 
     num_max_test_build_builds_pages = 20#None
     num_max_test_build_tests_pages = None
-    num_max_failures = 500
+    num_max_failures = 750
 
     test_failures = {'test': [], 'cl': [], 'duration': []}
+    build_failures = {'cl': [], 'failures': []}
     build_count = [0, 0, 0]
 
     def traverse_test_build_build_tests(rdata):
@@ -119,7 +120,7 @@ if 1:
                 #print(test.keys())
                 test_rdata = get(test['href'])
                 #print(test_rdata.keys())  
-                duration = 1
+                duration = 1 # default for diff
                 if 'duration' in test:
                     duration = test['duration']
                 test_failures['test'] += [test['name']]
@@ -136,10 +137,13 @@ if 1:
                 test_build_build_rdata = get(test_build_build['href'])
                 if 'testOccurrences' in test_build_build_rdata:
                     if 'failed' in test_build_build_rdata['testOccurrences']:
-                        build_count[2] += 1
+                        cl = test_build_build['number']
                         num_failed = test_build_build_rdata['testOccurrences']['failed']
+                        build_failures['cl'] += [cl]
+                        build_failures['failures'] += [num_failed]
+                        build_count[2] += 1
                         if num_failed <= num_max_failures:
-                            print('CL', test_build_build['number'], 'failed', num_failed)
+                            print('CL', cl, 'failed', num_failed)
                             traverse_linked_pages(test_build_build_rdata['testOccurrences']['href'], 
                                 traverse_test_build_build_tests, num_max_pages=num_max_test_build_tests_pages)
 
@@ -149,6 +153,8 @@ if 1:
     print('{0:d} total builds, {1:d} failed, {2:d} used.'.format(*build_count))
     df = pd.DataFrame(data=test_failures)
     df.to_csv('data_tmp/test_failures.csv')
+    df = pd.DataFrame(data=build_failures)
+    df.to_csv('data_tmp/build_failures.csv')
         
     
 
