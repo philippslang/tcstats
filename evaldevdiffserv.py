@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 LoadedData = collections.namedtuple('LoadedData', 'queried tc user')
 
-if 0: # query api
+if 1: # query api
     first_page = HOST + API + ENDPOINT
     num_max_pages = None
     
@@ -36,7 +36,7 @@ else: # load last saved
     data = pickle.load(open(FNAME_DATA, 'rb'))
     print('\nLoaded data from {:}'.format(time.asctime(data.queried)))
 
-if 0:
+if 1:
     df = pd.DataFrame(pd.to_datetime(pd.Series(data.user)), columns=['posted'])
     title = 'Users'
 else:

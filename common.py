@@ -1,11 +1,21 @@
 import requests
 import localdata
 import logging 
+import enum
+import string
+import collections
+
 
 TC_HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 TC_AUTH = (localdata.USER, localdata.PW)
 TC_ENDPOINT_API = '/app/rest/latest'
 TC_ENDPOINT = localdata.TC
+
+
+def contains_any_of(inhere, oneofthese):
+    if any(hot in inhere for hot in oneofthese):
+        return True
+    return False
 
 
 def get(epoint, auth=None, headers=None):

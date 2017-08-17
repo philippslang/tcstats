@@ -103,8 +103,7 @@ if 1:
             break # we'll look into this
     href_test_build = build['href']
     rdata = get(href_test_build)        
-    href_test_build_builds = rdata['builds']['href']
-    
+    href_test_build_builds = rdata['builds']['href']    
 
     num_max_test_build_builds_pages = 20#None
     num_max_test_build_tests_pages = None

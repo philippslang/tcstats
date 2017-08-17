@@ -1,19 +1,85 @@
-import sys, logging, requests, collections
+import sys, logging, requests, collections, enum
 import common
 import pandas as pd
 import numpy as np
 
 
-UNDEFINED = 'NA'
-
 #logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 
 
-Configuration = collections.namedtuple('Configuration', 'platform num_processes num_threads')
+UNDEF = 'NA'
 
 
-class TCRegressionTestData:
+class System(enum.Enum):
+    LINUX = 1
+    WINDOWS = 2
+
+
+class Configuration(enum.Enum):
+    DEBUG = 1
+    RELEASE = 2
+
+
+class Instrumentation(enum.Enum):
+    NAKED = 1
+    VALGRIND = 2
+    TSAN = 3
+    ASAN = 4
+    NOGE = 5
+
+
+class TestType(enum.Enum):
+    UNIT = 1
+    REGRESSION = 2
+
+
+BuildType = collections.namedtuple('BuildType', 'system configuration instrumentation')
+
+
+RunType = collections.namedtuple('RunType', 'num_processes num_threads')
+
+
+def detect_test_type(in_this_string):
+    in_this_lc_string = in_this_string.lower()
+    if common.contains_any_of(in_this_lc_string, ['unit']):
+        return TestType.UNIT
+    return TestType.REGRESSION
+
+
+def detect_operating_system(in_this_lc_string):
+    if common.contains_any_of(in_this_lc_string, ['pc', 'vs']):
+        return System.WINDOWS
+    return System.LINUX   
+
+
+def detect_configuration(in_this_lc_string):
+    if common.contains_any_of(in_this_lc_string, ['debug']):
+        return Configuration.DEBUG
+    return Configuration.RELEASE
+
+
+def detect_instrumentation(in_this_lc_string):
+    if common.contains_any_of(in_this_lc_string, ['valgrind']):
+        return Instrumentation.VALGRIND
+    if common.contains_any_of(in_this_lc_string, ['threadsanitizer']):
+        return Instrumentation.TSAN
+    if common.contains_any_of(in_this_lc_string, ['addresssanitizer']):
+        return Instrumentation.ASAN
+    if common.contains_any_of(in_this_lc_string, ['noge', 'without ge']):
+        return Instrumentation.NOGE
+    return Instrumentation.NAKED
+
+
+def detect_build_type(in_this_string):
+    in_this_lc_string = in_this_string.lower()
+    osys = detect_operating_system(in_this_lc_string)
+    config = detect_configuration(in_this_lc_string)
+    instrument = detect_instrumentation(in_this_lc_string)
+    return BuildType(osys, config, instrument)
+
+
+class TCTestData:
     def __init__(self):
         # Test name as key, dicts as value with Configuration
         # as key and list of durations as value
@@ -31,46 +97,69 @@ def extract_test_name(tc_test_name):
     elif idx_first_dot != -1:
         test_name = tc_test_name[idx_first_dot+1:]
     return test_name
+
+
+def is_valid_test_configuration(name_configuration):
+    name_configuration = name_configuration.lower()
+    if any(hot in name_configuration for hot in ['small', 'daily', 'tests', 'test', 'cvx', 'schedule', 'cases']):
+        if any(cold in name_configuration for cold in ['coverage']):
+            return False
+        return True
+    return False
     
 
-rdata = common.get_tc('/projects/id:IntersectMain_RollingBuilds_Tests')
-name_tests_build = 'Rolling Run DAILY Tests RH6'
-name_tests_build = 'Daily Run Small and Daily Tests without ge option PC'
-name_tests_build = 'Rolling Run SMALL Tests PC'
-name_tests_build = 'Rolling Run SMALL Tests RH6'
-tests_builds = rdata['buildTypes']['buildType']
-for tests_build in tests_builds: # look for the tests build in question
-    if name_tests_build in tests_build['name']:
-        logging.info('Found test build: {:}.'.format(tests_build['name']))
-        break # we'll look into this
-href_tests_build = tests_build['href']
-tests_build = common.get_tc(href_tests_build)
+########
+# main #
+########
 
-num_max_build_pages = 1
-num_max_test_pages = 1
+categories = ['RollingBuilds_Builds', 'RollingBuilds_Tests', 'ScheduledBuilds', 'MemoryChecks']
 
-def for_each_build_tests_page(pagedata):
-    for test in pagedata['testOccurrence']:
-        test_summary = common.get_tc(test['href'])
-        test_name = extract_test_name(test_summary['name'])
-        if 'ignored' in test_summary and test_summary['ignored']:
+for category in categories:
+    rdata = common.get_tc('/projects/id:IntersectMain_' + category)
+    print('Exploring category: {:}.'.format(rdata['name']))
+    
+    configurations = rdata['buildTypes']['buildType']
+    num_max_configuration_builds_pages = 1
+
+    for configuration in configurations: # look for the tests build in question
+        name_configuration = configuration['name']
+
+        if not is_valid_test_configuration(name_configuration):
             continue
-        print(test_summary['status'], test_name) 
-        print(test_summary['test']['href'])
-        test_details = common.get_tc(test_summary['test']['href'])
-        print(test_details)
-        break
+
+        test_type_configuration = detect_test_type(name_configuration)
+        if test_type_configuration == TestType.UNIT:
+            continue
+
+        print('.'*1, 'Found valid configuration: {:}.'.format(name_configuration))
+        print('.'*2, 'Build type: {:}'.format(detect_build_type(name_configuration)))        
+
+        def for_each_configuration_builds_page(data_page):
+            for build in data_page['build']:
+                num_build = build['number']
+                details_build = common.get_tc(build['href'])
+                # TC youtrack bug TW-51221
+                href_build_artifcats = details_build['artifacts']['href'].replace('latest/latest', 'latest')
+                artifacts = common.get_tc(href_build_artifcats)   
+                if artifacts['count'] > 0:
+                    for iartifact in range(artifacts['count']):
+                        name_artifact = artifacts['file'][iartifact]['name']
+                        print('.'*2, 'Found artifact {0:} @ {1:}'.format(name_artifact, num_build))
+                        # TODO check if meaningful artiface and analyse, if not check duration
+                else:
+                    print('.'*2, 'Found no artifacts @ {0:}'.format(num_build))    
+                    # TODO loop over tests, see if meaningful, use NA for run type
+                break # only first build
+        
+        details_configuration = common.get_tc(configuration['href'])
+        common.traverse_linked_pages_tc(details_configuration['builds']['href'], for_each_configuration_builds_page, 
+          num_max_pages=num_max_configuration_builds_pages)
+
+        break # only first build configuration
 
 
-def for_each_tests_build_builds_page(pagedata):
-    for build in pagedata['build']:
-        tests_overview = common.get_tc(build['href'])        
-        tests_summary = common.get_tc(tests_overview['href'])        
-        tests = common.get_tc(tests_summary['testOccurrences']['href'])
-        common.traverse_linked_pages_tc(tests_summary['testOccurrences']['href'], 
-          for_each_build_tests_page, num_max_pages=num_max_test_pages)        
-        break # only first build
 
-common.traverse_linked_pages_tc(tests_build['builds']['href'], for_each_tests_build_builds_page, 
-  num_max_pages=num_max_build_pages)
+
+
+        
 
