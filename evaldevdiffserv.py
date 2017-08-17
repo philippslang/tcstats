@@ -1,35 +1,57 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import collections
+import pickle, time, datetime
 plt.style.use('ggplot')
-import common
+import common, logging
 
 HOST = 'http://slb-2cgbj32.dir.slb.com:8000'
 API = '/devdiff/latest'
 ENDPOINT = '/results/?page=1'
+FNAME_DATA = 'data_tmp/evaldevdiffserv_data'
+
+logging.basicConfig(level=logging.INFO)
 
 
-posted_tc = []
-posted_user = []
+LoadedData = collections.namedtuple('LoadedData', 'queried tc user')
 
-def for_each_results_page(rdata):
-    for result in rdata['results']:
-        if 'tc' in result['origin']:
-            posted_tc.append(result['posted'])
-        else:
-            posted_user.append(result['posted'])            
+if 0: # query api
+    first_page = HOST + API + ENDPOINT
+    num_max_pages = None
     
- 
-first_page = HOST + API + ENDPOINT
-num_max_pages = None
+    data = LoadedData(time.localtime(time.time()), [], [])
 
-common.traverse_linked_pages(first_page, for_each_results_page, verbose=1, num_max_pages=num_max_pages)
+    def for_each_results_page(rdata):
+        for result in rdata['results']:
+            if 'tc' in result['origin']:
+                data.tc.append(result['posted'])
+            else:
+                data.user.append(result['posted'])            
 
-df = pd.DataFrame(pd.to_datetime(pd.Series(posted_tc)), columns=['posted'])
-print(df.head())
-print(df.tail())
+    common.traverse_linked_pages(first_page, for_each_results_page, num_max_pages=num_max_pages)
+    pickle.dump(data, open(FNAME_DATA, 'wb'))
 
-df.groupby([df['posted'].dt.month, df['posted'].dt.day, df['posted'].dt.hour]).count().plot(kind='bar')
+else: # load last saved
+    data = pickle.load(open(FNAME_DATA, 'rb'))
+    print('\nLoaded data from {:}'.format(time.asctime(data.queried)))
+
+if 0:
+    df = pd.DataFrame(pd.to_datetime(pd.Series(data.user)), columns=['posted'])
+    title = 'Users'
+else:
+    df = pd.DataFrame(pd.to_datetime(pd.Series(data.tc)), columns=['posted'])
+    title = 'TC'
+
+print('\nDataset start\n', df.tail())
+print('\nMost recent\n', df.head())
+
+date_from_incl = datetime.date(year=2017, month=8, day=14)
+df = df[df['posted'] >= date_from_incl]
+
+#df.groupby([df['posted'].dt.month, df['posted'].dt.day, df['posted'].dt.hour]).count().plot(kind='bar')
+df.groupby([df['posted'].dt.month, df['posted'].dt.day]).count().plot(kind='bar')
+plt.title(title)
 plt.show()
 
 

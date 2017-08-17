@@ -101,5 +101,5 @@ ENV/
 .mypy_cache/
 
 .vscode/
-.data_tmp/
+data_tmp/
 localdata.py
