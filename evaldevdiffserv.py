@@ -46,7 +46,9 @@ else:
 print('\nDataset start\n', df.tail())
 print('\nMost recent\n', df.head())
 
-date_from_incl = datetime.date(year=2017, month=8, day=14)
+
+date_from_incl = datetime.date(year=2017, month=8, day=21) # monday after p4user triggered teamcity tag made it through
+#date_from_incl = datetime.date(year=2017, month=8, day=14) # monday after teamcity tag made it through
 df = df[df['posted'] >= date_from_incl]
 
 #df.groupby([df['posted'].dt.month, df['posted'].dt.day, df['posted'].dt.hour]).count().plot(kind='bar')
