@@ -1,8 +1,8 @@
 import math
 import numpy as np
 
-OVERHEAD_MIN_LO = 10
-OVERHEAD_MIN_HI = 20
+OVERHEAD_MIN_LO = 5
+OVERHEAD_MIN_HI = 15
 
 def google_compute(total_seconds, process_seconds, num_max_processes, platform):
     """

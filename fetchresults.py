@@ -24,7 +24,7 @@ def get_all_with_status():
 
 def get_last_24hrs():
     first_page = HOST + API + ENDPOINT
-    num_max_pages = 20 # good enough
+    num_max_pages = 50 #None
     results = []
 
     def for_each_results_page(rdata, results): 
@@ -33,9 +33,9 @@ def get_last_24hrs():
         for result in rdata['results']:
             then = datetime.datetime.strptime(result['posted'], "%Y-%m-%dT%H:%M:%S.%fZ")
             #logging.debug('Result: {}'.format(then.isoformat()))
-            delta = now - then
-            logging.debug('Delta: {}'.format(str(delta)))
+            delta = now - then            
             if delta.total_seconds() < float(24*60*60):
+                logging.debug('Delta: {}'.format(str(delta)))
                 results += [result]       
    
     common.traverse_linked_pages(first_page, for_each_results_page, num_max_pages=num_max_pages, callback_args=[results])

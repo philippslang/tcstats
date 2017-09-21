@@ -9,7 +9,7 @@ from adjustText import adjust_text
 logging.basicConfig(level=logging.INFO)
 #logging.basicConfig(level=logging.DEBUG)
 
-if 1:
+if 0:
     results = fetchresults.get_all_with_status()
     pickle.dump(results, open(r'data_tmp\resultsstatus', 'wb'))
 else:
@@ -26,7 +26,10 @@ for result in results:
     num_threads_ix = common.make_int_array(result['num_threads_ix'])
     vcpu_seconds_tests = num_threads_ix*num_processes_ix*duration_ix + duration_ecl2ix
     tests = result['tests'].split(',')
-    cl = int(result['cl'])
+    try:
+        cl = int(result['cl'])
+    except:
+        cl = 0
     for i, test in enumerate(tests):
         if status[i] > 0: # TODO outsource to failed method, or better, make test type
             if test in failures:
@@ -53,7 +56,7 @@ print(summary)
 
 fig, axes = plt.subplots(figsize=(8, 8))
 x = summary['vCPU seconds']
-y = summary['coverage']
+y = summary['coverage'] / np.max(summary['coverage'])
 axes.scatter(x, y, s=summary['efficiency']*750, alpha=0.5, c=np.random.rand(len(x)))
 axes.set_xlabel('vCPU seconds')
 axes.set_ylabel('Coverage')
