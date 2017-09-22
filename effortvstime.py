@@ -50,7 +50,7 @@ print(compute_hours_per_day)
 ax = compute_hours_per_day.plot(kind='bar', alpha=0.5)
 ax.set_ylabel('Compute Hours')
 ax.legend_.remove()
-plt.savefig('data_tmp/effort14.png', dpi=600)
+plt.savefig('data_tmp/testeffort.png', dpi=600)
 plt.show()
 
 

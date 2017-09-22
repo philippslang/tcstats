@@ -60,11 +60,13 @@ y = summary['coverage'] / np.max(summary['coverage'])
 axes.scatter(x, y, s=summary['efficiency']*750, alpha=0.5, c=np.random.rand(len(x)))
 axes.set_xlabel('vCPU seconds')
 axes.set_ylabel('Coverage')
-ts = []
-for i, test in enumerate(summary['test']):
-    ts.append(plt.text(x[i], y[i], test))
-adjust_text(ts, x=x, y=y, force_points=0.1, arrowprops=dict(arrowstyle='->', 
-  color='red'))
+axes.set_xlim(0, 1000)
+if 0:
+    ts = []
+    for i, test in enumerate(summary['test']):
+        ts.append(plt.text(x[i], y[i], test))
+    adjust_text(ts, x=x, y=y, force_points=0.1, arrowprops=dict(arrowstyle='->', 
+    color='red'))
 plt.show()
 
 

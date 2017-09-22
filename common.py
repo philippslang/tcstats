@@ -150,11 +150,11 @@ def traverse_linked_pages(href_page, call_me_whith_rdata, num_max_pages=None, ip
 
     rdata = getter(href_page)
     if not callback_args:
-        call_me_whith_rdata(rdata)
+        proceed = call_me_whith_rdata(rdata)
     else:
-        call_me_whith_rdata(rdata, *callback_args)        
+        proceed = call_me_whith_rdata(rdata, *callback_args)        
 
-    if num_max_pages is None or ipage < num_max_pages: 
+    if proceed and (num_max_pages is None or ipage < num_max_pages): 
         if next_key in rdata and rdata[next_key] is not None:
             traverse_linked_pages(rdata[next_key], call_me_whith_rdata, num_max_pages=num_max_pages, 
               ipage=ipage, auth=None, headers=None, getter=getter, next_key=next_key, callback_args=callback_args)

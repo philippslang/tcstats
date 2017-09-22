@@ -17,14 +17,15 @@ def get_all_with_status():
         for result in rdata['results']:
             if result['status']:
                 results += [result]   
+        return True
 
     common.traverse_linked_pages(first_page, for_each_results_page, callback_args=[results])
     return results
 
 
 def get_last_24hrs():
+    min_date = datetime.datetime.now() - datetime.timedelta(hours=24)
     first_page = HOST + API + ENDPOINT
-    num_max_pages = 50 #None
     results = []
 
     def for_each_results_page(rdata, results): 
@@ -34,11 +35,14 @@ def get_last_24hrs():
             then = datetime.datetime.strptime(result['posted'], "%Y-%m-%dT%H:%M:%S.%fZ")
             #logging.debug('Result: {}'.format(then.isoformat()))
             delta = now - then            
-            if delta.total_seconds() < float(24*60*60):
+            if then > min_date:
                 logging.debug('Delta: {}'.format(str(delta)))
-                results += [result]       
+                results += [result] 
+            else:
+                return False   
+        return True   
    
-    common.traverse_linked_pages(first_page, for_each_results_page, num_max_pages=num_max_pages, callback_args=[results])
+    common.traverse_linked_pages(first_page, for_each_results_page, callback_args=[results])
     return results
 
 

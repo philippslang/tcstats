@@ -70,8 +70,8 @@ axes.pie(numbers, explode=explode, labels=labels, autopct=make_autopct(numbers),
 axes.axis('equal')
 
 axes = all_axes[0, 1]
-timings = np.array([vCPU_min_tc, vCPU_min_user], dtype=np.int32)
-axes.set_title('{:d} vCPU minutes'.format(timings.sum()))
+timings = np.array([1+vCPU_min_tc/60, 1+vCPU_min_user/60], dtype=np.int32)
+axes.set_title('{:d} compute hours'.format(timings.sum()))
 labels = 'TeamCity', 'Workstation'
 explode = (0, 0.1) 
 axes.pie(timings, explode=explode, labels=labels, autopct=make_autopct(timings),
@@ -86,18 +86,18 @@ axes.set_ylabel('USD')
 
 
 axes = all_axes[1, 1]
-axes.set_title('vCPU required')
+axes.set_title('# vCPU required')
 labels = [vCPU for vCPU in num_max_vCPU_ix_count.keys()]
 #labels = num_max_vCPU_ix_count.keys()
 counts = [num_max_vCPU_ix_count[count] for count in labels]
 axes.bar(labels, counts)
-axes.set_xlabel('vCPU')
-axes.set_ylabel('# tests')
+axes.set_xlabel('# vCPU')
+axes.set_ylabel('tests')
 axes.text(0.5, 0.5, '({0:d},{1:d})'.format(np.min(labels), np.max(labels)),horizontalalignment='center',
  verticalalignment='center', transform=axes.transAxes)
 #axes.pie(counts, labels=labels, shadow=True, startangle=45)#, autopct=make_autopct(counts))
 #axes.axis('equal')
-
+plt.savefig('data_tmp/dayswork.png', dpi=600)
 plt.show()
 
 
