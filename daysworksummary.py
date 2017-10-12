@@ -9,9 +9,9 @@ logging.basicConfig(level=logging.INFO)
 
 if 1:
     results = fetchresults.get_last_24hrs()
-    pickle.dump(results, open(r'data_tmp\results24', 'wb'))
+    pickle.dump(results, open(r'data_tmp\latest24', 'wb'))
 else:
-    results = pickle.load(open(r'data_tmp\results24', 'rb'))
+    results = pickle.load(open(r'data_tmp\latest24', 'rb'))
 
 cost_24hrs = np.zeros((4,))
 
@@ -21,13 +21,17 @@ num_user_calls = 0
 num_tc_calls = 0
 vCPU_min_user = 0.
 vCPU_min_tc = 0.
+num_tests = 0
+num_tests_failed = 0
 for result in results:
     if 'tc' in result['origin']:
         num_tc_calls += 1
     else:
-        num_user_calls += 1
+        num_user_calls += 1    
     if not result['duration_ix'] or result['duration_ix'] == 'NA':
             continue
+    num_tests += len(result['duration_ix'])
+    num_tests_failed += np.sum(common.make_int_array(result['status']))
     duration_ix = common.make_int_array(result['duration_ix'])
     duration_ecl2ix = common.make_int_array(result['duration_ecl2ix'])
     num_processes_ix = common.make_int_array(result['num_processes_ix'])
@@ -51,12 +55,12 @@ for result in results:
     else:
         vCPU_min_user += thread_min
 
-
+print('Number of tests = {0:d}, failed = {1:d}'.format(num_tests, num_tests_failed))
 fig, all_axes = plt.subplots(2, 2, figsize=(12, 8))
 
 axes = all_axes[0, 0]
 numbers = np.array([num_tc_calls, num_user_calls], dtype=np.int16)
-axes.set_title('{:d} posts'.format(numbers.sum()))
+axes.set_title('{:d} test sets'.format(numbers.sum()))
 labels = 'TeamCity', 'Workstation'
 explode = (0, 0.1) 
 def make_autopct(numbers):
@@ -86,13 +90,13 @@ axes.set_ylabel('USD')
 
 
 axes = all_axes[1, 1]
-axes.set_title('# vCPU required')
+axes.set_title('Infrastructure requirements')
 labels = [vCPU for vCPU in num_max_vCPU_ix_count.keys()]
 #labels = num_max_vCPU_ix_count.keys()
 counts = [num_max_vCPU_ix_count[count] for count in labels]
 axes.bar(labels, counts)
 axes.set_xlabel('# vCPU')
-axes.set_ylabel('tests')
+axes.set_ylabel('# test sets')
 axes.text(0.5, 0.5, '({0:d},{1:d})'.format(np.min(labels), np.max(labels)),horizontalalignment='center',
  verticalalignment='center', transform=axes.transAxes)
 #axes.pie(counts, labels=labels, shadow=True, startangle=45)#, autopct=make_autopct(counts))

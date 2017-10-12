@@ -12,7 +12,8 @@ TC_AUTH = (localdata.USER, localdata.PW)
 TC_ENDPOINT_API = '/app/rest/latest'
 TC_ENDPOINT = localdata.TC
 FNAME_DB = 'data_tmp/test_effort_db'
-
+TC_TIME_FORMAT = '%Y%m%dT%H%M%S+0100'
+P4_TIME_FORMAT = '%Y/%m/%dT%H:%M:%S'
 UNDEF = 'NA'
 
 

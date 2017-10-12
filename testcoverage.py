@@ -1,4 +1,4 @@
-import common, cost, fetchresults
+import common, fetchresults
 import logging, sys
 import numpy as np
 import pickle
@@ -17,6 +17,7 @@ else:
 
 
 failures = {}
+changelists = set()
 vcpu_seconds = {}
 for result in results:
     status = common.make_int_array(result['status'])
@@ -30,15 +31,28 @@ for result in results:
         cl = int(result['cl'])
     except:
         cl = 0
-    for i, test in enumerate(tests):
-        if status[i] > 0: # TODO outsource to failed method, or better, make test type
-            if test in failures:
-                failures[test] += [cl]
-                vcpu_seconds[test] += [vcpu_seconds_tests[i]]
-            else:
-                failures[test] = [cl]
-                vcpu_seconds[test] = [vcpu_seconds_tests[i]]
+    if cl is not 0:
+        for i, test in enumerate(tests):
+            if status[i] > 0: # TODO outsource to failed method, or better, make test type
+                changelists.add(cl)
+                if test in failures:
+                    failures[test] += [cl]
+                    vcpu_seconds[test] += [vcpu_seconds_tests[i]]
+                else:
+                    failures[test] = [cl]
+                    vcpu_seconds[test] = [vcpu_seconds_tests[i]]
 
+changelists = list(changelists)
+test_fauilures = {}
+for test in failures:
+    failed_cls = [0]*len(changelists)
+    for failed_cl in failures[test]:
+        failed_cls[changelists.index(failed_cl)] = 1
+    test_fauilures[test] = failed_cls
+test_coverage = pd.DataFrame(test_fauilures, index=changelists)
+
+test_coverage.to_csv('data_tmp/test_coverage.csv')
+sys.exit()
 coverage = []           
 vcpusecs = []           
 name = []           

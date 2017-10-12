@@ -10,11 +10,11 @@ import pickle
 logging.basicConfig(level=logging.INFO)
 #logging.basicConfig(level=logging.DEBUG)
 
-if 0:
+if 1:
     results = fetchresults.get_all_with_status()
-    pickle.dump(results, open(r'data_tmp\effortvstime', 'wb'))
+    pickle.dump(results, open(r'data_tmp\latestall', 'wb'))
 else:
-    results = pickle.load(open(r'data_tmp\effortvstime', 'rb'))
+    results = pickle.load(open(r'data_tmp\latestall', 'rb'))
 
 
 date_all = []
@@ -34,19 +34,19 @@ for result in results:
 
 date = pd.to_datetime(pd.Series(date_all))
 compute_hours = pd.DataFrame(compute_hours_all, index=date)
-date_from_incl = datetime.datetime(2017, 8, 28, 0, 0) #
+date_from_incl = datetime.datetime(2017, 8, 28, 0, 0)  # first full monday
 date_mask = (compute_hours.index >= date_from_incl)
 dates = compute_hours.index[date_mask]
 compute_hours = compute_hours.ix[dates]
 
 if 0:
-    date_to_incl = datetime.datetime(2017, 9, 11, 0, 0) 
-    date_mask = (compute_hours.index <= date_to_incl)
+    date_to_notincl = datetime.datetime(2017, 9, 25, 0, 0) 
+    date_mask = (compute_hours.index <= date_to_notincl)
     dates = compute_hours.index[date_mask]
     compute_hours = compute_hours.ix[dates]
 
 compute_hours_per_day = compute_hours.groupby(lambda x: x.date()).aggregate(lambda x: sum(x))
-print(compute_hours_per_day)
+print(compute_hours_per_day.mean())
 ax = compute_hours_per_day.plot(kind='bar', alpha=0.5)
 ax.set_ylabel('Compute Hours')
 ax.legend_.remove()
